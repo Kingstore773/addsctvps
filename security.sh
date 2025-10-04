@@ -387,30 +387,26 @@ EOF
     # Apply middleware to routes
     log "🔧 Applying middleware to routes..."
 
-    # Function to apply middleware to route group (FIXED VERSION)
+    # Function to apply middleware to route group
     apply_middleware_to_group() {
         local file="$1"
-        local group_prefix="$2"
+        local group_pattern="$2"
         
         if [ -f "$file" ]; then
-            # Check if group exists without middleware
-            if grep -q "Route::group(\['prefix' => '$group_prefix'\])" "$file"; then
-                # Replace group without middleware to with middleware
-                sed -i "s/Route::group(\['prefix' => '$group_prefix'\]/Route::group(['prefix' => '$group_prefix', 'middleware' => ['custom.security']]/g" "$file"
-                log "✅ Applied middleware to $group_prefix group in $(basename $file)"
-            elif grep -q "Route::group(\['prefix' => '$group_prefix'," "$file" && ! grep -q "'middleware' => \['custom.security'\]" "$file"; then
-                # Group exists with other middleware but not our custom.security
-                sed -i "s/Route::group(\['prefix' => '$group_prefix',/Route::group(['prefix' => '$group_prefix', 'middleware' => ['custom.security'],/g" "$file"
-                log "✅ Added middleware to existing $group_prefix group in $(basename $file)"
+            # Check if group exists without our middleware
+            if grep -q "$group_pattern" "$file" && ! grep -q "custom.security" "$file" && grep -q "$group_pattern" "$file"; then
+                # Add middleware to the group
+                sed -i "s/$group_pattern/$group_pattern, 'middleware' => ['custom.security']/g" "$file"
+                log "✅ Applied middleware to group in $(basename $file)"
             else
-                warn "⚠️ $group_prefix group not found or already has middleware in $(basename $file)"
+                warn "⚠️ Group not found or already has middleware in $(basename $file)"
             fi
         else
             warn "⚠️ File not found: $(basename $file)"
         fi
     }
 
-    # Function to apply middleware to individual routes (FIXED VERSION)
+    # Function to apply middleware to individual routes
     apply_middleware_to_route() {
         local file="$1"
         local route_pattern="$2"
@@ -442,60 +438,34 @@ EOF
         fi
     }
 
-    # Apply middleware to route groups
-    log "🔧 Applying middleware to route groups..."
-    apply_middleware_to_group "$PTERO_DIR/routes/api-client.php" "'/files'"
-    apply_middleware_to_group "$PTERO_DIR/routes/api-application.php" "'/users'"
-    apply_middleware_to_group "$PTERO_DIR/routes/api-application.php" "'/servers'"
-    apply_middleware_to_group "$PTERO_DIR/routes/api-application.php" "'/nodes'"
-    apply_middleware_to_group "$PTERO_DIR/routes/admin.php" "'settings'"
-    apply_middleware_to_group "$PTERO_DIR/routes/admin.php" "'users'"
-    apply_middleware_to_group "$PTERO_DIR/routes/admin.php" "'servers'"
-    apply_middleware_to_group "$PTERO_DIR/routes/admin.php" "'nodes'"
+    # Apply middleware to api-client.php files group
+    log "🔧 Applying middleware to api-client.php files group..."
+    apply_middleware_to_group "$PTERO_DIR/routes/api-client.php" "Route::group(\['prefix' => '/files'"
 
-    # Apply middleware to individual DELETE routes in api-application.php
-    log "🔧 Applying middleware to individual DELETE routes..."
-    API_APP_FILE="$PTERO_DIR/routes/api-application.php"
-    if [ -f "$API_APP_FILE" ]; then
-        # Apply to user delete route
-        apply_middleware_to_route "$API_APP_FILE" "Route::delete.*users.*delete"
-        apply_middleware_to_route "$API_APP_FILE" "Route::delete.*users.*{user:id}.*\].*delete"
+    # Apply middleware to specific routes in admin.php
+    log "🔧 Applying middleware to admin.php routes..."
+    ADMIN_FILE="$PTERO_DIR/routes/admin.php"
+    
+    if [ -f "$ADMIN_FILE" ]; then
+        # Define routes to protect in admin.php
+        admin_routes=(
+            "Route::patch('/view/{user:id}', \[Admin\\UserController::class, 'update'\])"
+            "Route::delete('/view/{user:id}', \[Admin\\UserController::class, 'delete'\])"
+            "Route::get('/view/{server:id}/details', \[Admin\\Servers\\ServerViewController::class, 'details'\])->name('admin.servers.view.details')"
+            "Route::get('/view/{server:id}/delete', \[Admin\\Servers\\ServerViewController::class, 'delete'\])->name('admin.servers.view.delete')"
+            "Route::post('/view/{server:id}/delete', \[Admin\\ServersController::class, 'delete'\])"
+            "Route::patch('/view/{server:id}/details', \[Admin\\ServersController::class, 'setDetails'\])"
+            "Route::get('/view/{node:id}/settings', \[Admin\\Nodes\\NodeViewController::class, 'settings'\])->name('admin.nodes.view.settings')"
+            "Route::get('/view/{node:id}/configuration', \[Admin\\Nodes\\NodeViewController::class, 'configuration'\])->name('admin.nodes.view.configuration')"
+            "Route::post('/view/{node:id}/settings/token', Admin\\NodeAutoDeployController::class)->name('admin.nodes.view.configuration.token')"
+            "Route::patch('/view/{node:id}/settings', \[Admin\\NodesController::class, 'updateSettings'\])"
+            "Route::delete('/view/{node:id}/delete', \[Admin\\NodesController::class, 'delete'\])->name('admin.nodes.view.delete')"
+        )
         
-        # Apply to server delete routes
-        apply_middleware_to_route "$API_APP_FILE" "Route::delete.*servers.*delete"
-        apply_middleware_to_route "$API_APP_FILE" "Route::delete.*servers.*{server:id}.*\].*delete"
-        apply_middleware_to_route "$API_APP_FILE" "Route::delete.*servers.*{server:id}.*{force.*\].*delete"
+        for route in "${admin_routes[@]}"; do
+            apply_middleware_to_route "$ADMIN_FILE" "$route"
+        done
     fi
-
-    # Apply middleware to server group in api-client
-    API_CLIENT_FILE="$PTERO_DIR/routes/api-client.php"
-    if [ -f "$API_CLIENT_FILE" ] && grep -q "Route::group(\['prefix' => '/servers/{server}', 'middleware' => \[" "$API_CLIENT_FILE"; then
-        if ! grep -q "'custom.security'" "$API_CLIENT_FILE"; then
-            sed -i "/Route::group(\['prefix' => '\/servers\/{server}', 'middleware' => \[/a\\
-            'custom.security'," "$API_CLIENT_FILE"
-            log "✅ Applied to server group in api-client.php"
-        fi
-    fi
-
-    # Manual check and fix for critical routes
-    log "🔍 Manual checking critical routes..."
-    check_and_fix_route() {
-        local file="$1"
-        local route_desc="$2"
-        local route_pattern="$3"
-        
-        if [ -f "$file" ] && grep -q "$route_pattern" "$file" && ! grep -q "custom.security" "$file" && grep -q "$route_pattern" "$file"; then
-            warn "⚠️ $route_desc in $(basename $file) doesn't have middleware, adding manually..."
-            
-            # Simple approach: add ->middleware(['custom.security']) before the closing );
-            sed -i "s/$route_pattern[^)]*);/$route_pattern->middleware(['custom.security']);/g" "$file"
-            log "✅ Manually added middleware to $route_desc"
-        fi
-    }
-
-    # Check specific critical routes
-    check_and_fix_route "$PTERO_DIR/routes/api-application.php" "User delete route" "Route::delete.*users.*{user:id}.*Application.*Users.*UserController.*delete"
-    check_and_fix_route "$PTERO_DIR/routes/api-application.php" "Server delete route" "Route::delete.*servers.*{server:id}.*Application.*Servers.*ServerController.*delete"
 
     # Clear cache and optimize
     log "🧹 Clearing cache and optimizing..."
@@ -545,9 +515,8 @@ EOF
     log "🔍 Verifying middleware application..."
     echo
     log "📋 Applied middleware to:"
-    log "   ✅ Route groups: files, users, servers, nodes, settings"
-    log "   ✅ Individual DELETE routes in api-application.php"
-    log "   ✅ Server group in api-client.php"
+    log "   ✅ api-client.php: /files group"
+    log "   ✅ admin.php: multiple user, server, and node routes"
     echo
     log "🎉 Custom Security Middleware installed successfully!"
     echo
