@@ -2,6 +2,7 @@
 
 set -e
 
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -25,155 +26,39 @@ info() {
     echo -e "${BLUE}[MENU]${NC} $1"
 }
 
-show_menu() {
-    clear
-    cat <<'EOF'
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣦⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠒⠒⠉⣩⣽⣿⣿⣿⣿⣿⠿⢿⣶⣶⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⣿⣿⣿⣿⣿⣿⣿⡷⠀⠈⠙⠻⢿⣿⣷⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⠿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠉⠻⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⣴⣶⣿⣿⣿⣿⣦⣄⣾⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⠏⠉⢹⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣁⡀⠀⢸⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣷⠀⢸⣿⣿⡇⠻⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⣷⣼⣿⣿⡇⠀⠈⠻⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⡃⠙⣿⣿⣄⡀⠀⠈⠙⢷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠺⣿⣿⣿⣿⣿⣿⣿⡟⠁⠀⠘⣿⣿⣿⣷⣶⣤⣈⡟⢳⢄⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⢻⣿⣯⡉⠛⠻⢿⣿⣷⣧⡀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⡿⠹⣿⣿⣿⣷⠀⠀⠀⢀⣿⣿⣷⣄⠀⠀⠈⠙⠿⣿⣄⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⠋⠀⣀⣻⣿⣿⣿⣀⣠⣶⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠈⢹⠇⠀⠀⣾⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣟⠛⠋⠉⠁⠀⠀⠀⠉⠻⢧⠀⠀⠀⠘⠃⠀⣼⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢢⡀⠀⠀⠀⠀⢿⣿⣿⠿⠟⠛⠉⠁⠈⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⢺⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠊⠀⠀⠀⣰⣿⣿⣿⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣾⣿⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⣷⣤⣀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⠀⠀⠀⠀⠀⠀⣀⣤⣶⣿⣿⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣶⣦⣤⣤⣀⣀⣀⣻⣿⣀⣀⣤⣴⣶⣿⣿⣿⣿⣿⠿⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠟⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⢿⣿⣯⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⡟⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-EOF
+# Configuration
+APP_DIR="/var/www/pterodactyl"
+MW_FILE="$APP_DIR/app/Http/Middleware/CustomSecurityCheck.php"
+KERNEL="$APP_DIR/app/Http/Kernel.php"
+API_CLIENT="$APP_DIR/routes/api-client.php"
+ADMIN_ROUTES="$APP_DIR/routes/admin.php"
 
-    echo
-    echo "=========================================="
-    echo "           KING STORE SECURITY            "
-    echo "        ADD SECURITY PTERODACTYL          "
-    echo "             VVIP TOOLS                   "
-    echo "=========================================="
-    echo
-    echo "Menu yang tersedia:"
-    echo "1. Install Security Middleware"
-    echo "2. Ganti Nama Credit"
-    echo "3. Custom Error Message"
-    echo "4. Keluar"
-    echo
-}
+# Check if running as root
+if [ "$EUID" -ne 0 ]; then
+    error "Please run as root"
+fi
 
-replace_credit_name() {
-    echo
-    info "GANTI NAMA CREDIT"
-    info "================="
-    echo
-    read -p "Masukkan nama baru untuk credit: " new_name
-    
-    if [ -z "$new_name" ]; then
-        error "Nama tidak boleh kosong!"
-    fi
-    
-    echo
-    info "Mengganti credit dengan '$new_name'..."
-    
-    if [ ! -f "$APP_DIR/app/Http/Middleware/CustomSecurityCheck.php" ]; then
-        error "Middleware belum diinstall! Silakan install terlebih dahulu."
-    fi
-    
-    # Replace semua credit name di middleware
-    sed -i "s/@KingStoreGanteng/@$new_name/g" "$APP_DIR/app/Http/Middleware/CustomSecurityCheck.php"
-    sed -i "s/KingStoreGanteng/$new_name/g" "$APP_DIR/app/Http/Middleware/CustomSecurityCheck.php"
-    
-    log "✅ Credit berhasil diganti menjadi '$new_name'"
-    
-    log "🧹 Membersihkan cache..."
-    cd $APP_DIR
-    sudo -u www-data php artisan config:clear
-    sudo -u www-data php artisan route:clear
-    sudo -u www-data php artisan cache:clear
-    
-    echo
-    log "🎉 Credit name berhasil diubah!"
-}
+if [ ! -d "$APP_DIR" ]; then
+    error "Pterodactyl directory not found: $APP_DIR"
+fi
 
-custom_error_message() {
-    echo
-    info "CUSTOM ERROR MESSAGE"
-    info "===================="
-    echo
-    read -p "Masukkan teks error custom: " custom_error
-    
-    if [ -z "$custom_error" ]; then
-        error "Teks error tidak boleh kosong!"
-    fi
-    
-    echo
-    info "Mengganti teks error dengan: '$custom_error'..."
-    
-    if [ ! -f "$APP_DIR/app/Http/Middleware/CustomSecurityCheck.php" ]; then
-        error "Middleware belum diinstall! Silakan install terlebih dahulu."
-    fi
-    
-    # Replace semua error message
-    sed -i "s/'error' => '[^']*'/'error' => '$custom_error'/g" "$APP_DIR/app/Http/Middleware/CustomSecurityCheck.php"
-    
-    log "✅ Semua teks error berhasil diganti dengan: '$custom_error'"
-    
-    log "🧹 Membersihkan cache..."
-    cd $APP_DIR
-    sudo -u www-data php artisan config:clear
-    sudo -u www-data php artisan route:clear
-    sudo -u www-data php artisan cache:clear
-    
-    echo
-    log "🎉 Semua teks error berhasil diubah!"
-}
+log "🚀 Installing Custom Security Middleware for Pterodactyl..."
+log "📁 Pterodactyl directory: $APP_DIR"
 
-install_middleware() {
-    if [ "$EUID" -ne 0 ]; then
-        error "Please run as root: sudo bash security.sh"
-    fi
+STAMP="$(date +%Y%m%d%H%M%S)"
+BACKUP_DIR="/root/pterodactyl-security-backup-$STAMP"
+mkdir -p "$BACKUP_DIR"
 
-    APP_DIR="/var/www/pterodactyl"
-    MW_FILE="$APP_DIR/app/Http/Middleware/CustomSecurityCheck.php"
-    KERNEL="$APP_DIR/app/Http/Kernel.php"
-    API_CLIENT="$APP_DIR/routes/api-client.php"
-    ADMIN_ROUTES="$APP_DIR/routes/admin.php"
+bk() { [ -f "$1" ] && cp -a "$1" "$BACKUP_DIR/$(basename "$1").bak.$STAMP" && log "  backup: $1 -> $BACKUP_DIR"; }
 
-    if [ ! -d "$APP_DIR" ]; then
-        error "Pterodactyl directory not found: $APP_DIR"
-    fi
+echo "== KING STORE SECURITY INSTALLER (BOT VERSION) =="
+echo "App: $APP_DIR"
+echo "Backup: $BACKUP_DIR"
 
-    log "🚀 Installing Security Middleware..."
-    log "📁 Pterodactyl directory: $APP_DIR"
-
-    STAMP="$(date +%Y%m%d%H%M%S)"
-    BACKUP_DIR="/root/pterodactyl-security-backup-$STAMP"
-    mkdir -p "$BACKUP_DIR"
-
-    bk() { [ -f "$1" ] && cp -a "$1" "$BACKUP_DIR/$(basename "$1").bak.$STAMP" && log "  backup: $1 -> $BACKUP_DIR"; }
-
-    echo "== KING STORE SECURITY INSTALLER =="
-    echo "App: $APP_DIR"
-    echo "Backup: $BACKUP_DIR"
-
-    # --- 1) Buat middleware ---
-    mkdir -p "$(dirname "$MW_FILE")"
-    bk "$MW_FILE"
-    cat >"$MW_FILE" <<'PHP'
+# --- 1) Buat middleware ---
+mkdir -p "$(dirname "$MW_FILE")"
+bk "$MW_FILE"
+cat >"$MW_FILE" <<'PHP'
 <?php
 
 namespace Pterodactyl\Http\Middleware;
@@ -532,45 +417,4 @@ PHP
     log "      - Hanya owner bisa akses backup"
     log "      - Admin lain diblokir dari panel"
     log ""
-    log "   💬 Error Message: Customizable via menu"
-    echo
     log "💬 Created by KING STORE - VVIP TOOLS"
-    echo
-    warn "⚠️ TESTING INSTRUCTIONS:"
-    log "   - Login sebagai admin ID 2 → coba akses admin panel → ERROR"
-    log "   - Login sebagai user → coba kontrol server orang lain → ERROR"
-    log "   - Login sebagai admin ID 1 → bisa akses semua → SUCCESS"
-}
-
-main() {
-    while true; do
-        show_menu
-        read -p "$(info 'Pilih opsi (1-4): ')" choice
-        
-        case $choice in
-            1)
-                echo
-                install_middleware
-                ;;
-            2)
-                replace_credit_name
-                ;;
-            3)
-                custom_error_message
-                ;;
-            4)
-                echo
-                log "Terima kasih! Keluar dari program."
-                exit 0
-                ;;
-            *)
-                error "Pilihan tidak valid! Silakan pilih 1, 2, 3, atau 4."
-                ;;
-        esac
-        
-        echo
-        read -p "$(info 'Tekan Enter untuk kembali ke menu...')"
-    done
-}
-
-main
