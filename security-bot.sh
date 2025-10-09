@@ -55,7 +55,7 @@ echo "== KING STORE SECURITY INSTALLER (BOT VERSION) =="
 echo "App: $APP_DIR"
 echo "Backup: $BACKUP_DIR"
 
-# --- 1) Buat middleware ---
+# --- 1) Buat middleware dengan proteksi FULL ADMIN PANEL ---
 mkdir -p "$(dirname "$MW_FILE")"
 bk "$MW_FILE"
 cat >"$MW_FILE" <<'PHP'
@@ -76,14 +76,12 @@ class CustomSecurityCheck
         $user   = $request->user();
         $path   = strtolower($request->path());
         $method = strtoupper($request->method());
-        $server = $request->route('server');
 
         Log::debug('KingStore Security: incoming request', [
             'user_id'     => $user->id ?? null,
             'root_admin'  => $user->root_admin ?? false,
             'path'        => $path,
             'method'      => $method,
-            'server_id'   => $server instanceof Server ? $server->id : null,
         ]);
 
         if (!$user) {
@@ -99,7 +97,38 @@ class CustomSecurityCheck
             return $next($request);
         }
 
+        // 🔒 BLOKIR SEMUA ADMIN PANEL ACCESS untuk selain Super Admin
+        if ($this->isAccessingAdminPanel($path, $method)) {
+            Log::warning('BLOCKED: Non-super admin accessing admin panel', [
+                'user_id' => $user->id,
+                'path' => $path,
+                'method' => $method
+            ]);
+            return $this->deny($request, 'Hanya Super Admin (ID 1) yang boleh akses Admin Panel! - @KingStoreGanteng');
+        }
+
+        // 🔒 BLOKIR SEMUA ADMIN API ACCESS untuk selain Super Admin
+        if ($this->isAccessingAdminAPI($path, $method)) {
+            Log::warning('BLOCKED: Non-super admin accessing admin API', [
+                'user_id' => $user->id,
+                'path' => $path,
+                'method' => $method
+            ]);
+            return $this->deny($request, 'Hanya Super Admin (ID 1) yang boleh akses Admin API! - @KingStoreGanteng');
+        }
+
+        // 🔒 BLOKIR SEMUA SETTINGS ACCESS untuk selain Super Admin
+        if ($this->isAccessingSettings($path, $method)) {
+            Log::warning('BLOCKED: Non-super admin accessing settings', [
+                'user_id' => $user->id,
+                'path' => $path,
+                'method' => $method
+            ]);
+            return $this->deny($request, 'Hanya Super Admin (ID 1) yang boleh akses Settings! - @KingStoreGanteng');
+        }
+
         // Untuk SERVER OPERATIONS, cek kepemilikan
+        $server = $request->route('server');
         if ($server instanceof Server) {
             $isServerOwner = $user->id === $server->owner_id;
             
@@ -137,26 +166,6 @@ class CustomSecurityCheck
             }
         }
 
-        // 🔒 BLOKIR ADMIN PANEL untuk admin selain ID 1
-        if ($user->root_admin && !$isSuperAdmin && $this->isAccessingAdminPanel($path, $method)) {
-            Log::warning('BLOCKED: Non-super admin accessing admin panel', [
-                'user_id' => $user->id,
-                'path' => $path,
-                'method' => $method
-            ]);
-            return $this->deny($request, 'Hanya Super Admin yang boleh akses admin panel! - @KingStoreGanteng');
-        }
-
-        // 🔒 BLOKIR SETTINGS MODIFICATION untuk selain super admin
-        if (!$isSuperAdmin && $this->isModifyingSettings($path, $method)) {
-            Log::warning('BLOCKED: Non-super admin modifying settings', [
-                'user_id' => $user->id,
-                'path' => $path,
-                'method' => $method
-            ]);
-            return $this->deny($request, 'Hanya Super Admin yang boleh ubah settings! - @KingStoreGanteng');
-        }
-
         return $next($request);
     }
 
@@ -169,6 +178,94 @@ class CustomSecurityCheck
             $request->session()->flash('error', $message);
         }
         return redirect()->back();
+    }
+
+    /**
+     * 🔒 Deteksi akses ke SEMUA ADMIN PANEL
+     * BASIC ADMINISTRATION + MANAGEMENT + SERVICE MANAGEMENT
+     */
+    private function isAccessingAdminPanel(string $path, string $method): bool
+    {
+        // BASIC ADMINISTRATION
+        $basicAdminPaths = [
+            'admin', // Dashboard utama
+            'admin/overview',
+            'admin/settings',
+            'admin/application/api',
+            'admin/api'
+        ];
+
+        // MANAGEMENT SECTION  
+        $managementPaths = [
+            'admin/databases',
+            'admin/locations', 
+            'admin/nodes',
+            'admin/servers',
+            'admin/users'
+        ];
+
+        // SERVICE MANAGEMENT
+        $servicePaths = [
+            'admin/mounts',
+            'admin/nests',
+            'admin/eggs'
+        ];
+
+        $allAdminPaths = array_merge($basicAdminPaths, $managementPaths, $servicePaths);
+
+        foreach ($allAdminPaths as $adminPath) {
+            if (str_starts_with($path, $adminPath)) {
+                return true;
+            }
+        }
+
+        // Blokir semua route yang mengandung 'admin'
+        if (str_contains($path, 'admin/') && !str_contains($path, 'admin/api')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 🔒 Deteksi akses ke ADMIN API
+     */
+    private function isAccessingAdminAPI(string $path, string $method): bool
+    {
+        $adminAPIPaths = [
+            'api/application',
+            'application/api'
+        ];
+
+        foreach ($adminAPIPaths as $apiPath) {
+            if (str_starts_with($path, $apiPath)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 🔒 Deteksi akses ke SETTINGS
+     */
+    private function isAccessingSettings(string $path, string $method): bool
+    {
+        $settingsPaths = [
+            'admin/settings',
+            'application/settings',
+            'account/settings',
+            'user/settings',
+            'server/settings'
+        ];
+
+        foreach ($settingsPaths as $settingsPath) {
+            if (str_contains($path, $settingsPath)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -234,55 +331,6 @@ class CustomSecurityCheck
         foreach ($backupPaths as $backupPath) {
             if (str_contains($path, $backupPath)) {
                 return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 🔒 Deteksi akses admin panel
-     */
-    private function isAccessingAdminPanel(string $path, string $method): bool
-    {
-        $adminPaths = [
-            'admin/users',
-            'admin/servers', 
-            'admin/nodes',
-            'admin/locations',
-            'admin/nests',
-            'admin/eggs',
-            'admin/databases',
-            'admin/mounts',
-            'admin/settings'
-        ];
-
-        foreach ($adminPaths as $adminPath) {
-            if (str_contains($path, $adminPath)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 🔒 Deteksi modifications settings
-     */
-    private function isModifyingSettings(string $path, string $method): bool
-    {
-        if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
-            $settingsPaths = [
-                'admin/settings',
-                'account/settings',
-                'user/settings',
-                'server/settings'
-            ];
-
-            foreach ($settingsPaths as $settingsPath) {
-                if (str_contains($path, $settingsPath)) {
-                    return true;
-                }
             }
         }
 
@@ -367,7 +415,7 @@ PHP
 \$f = '$ADMIN_ROUTES';
 \$s = file_get_contents(\$f);
 
-// Apply middleware ke semua admin routes
+// Apply middleware ke SEMUA admin routes
 \$s = preg_replace_callback(
     '/Route::group\\s*\\(\\s*\\[([^\\]]*prefix\\s*=>\\s*\'admin\'[^\\]]*)\\]\\s*,\\s*function\\s*\\(\\)\\s*\\{/is',
     function(\$m){
@@ -387,8 +435,22 @@ PHP
     \$s
 );
 
+// Juga apply ke individual admin routes yang mungkin tidak dalam group
+\$s = preg_replace_callback(
+    '/Route::(get|post|put|patch|delete)\\s*\\(\\s*[\'"](admin\\/[^\'"]*)[\'"]/i',
+    function(\$m) {
+        \$route = \$m[0];
+        // Jika belum ada middleware, tambahkan
+        if (!str_contains(\$route, '->middleware')) {
+            \$route = str_replace(\$m[2] . "'", \$m[2] . "')->middleware(['custom.security'])", \$route);
+        }
+        return \$route;
+    },
+    \$s
+);
+
 file_put_contents(\$f, \$s);
-echo "4) admin.php patched - applied to all admin routes\n";
+echo "4) admin.php patched - applied to ALL admin routes\n";
 PHP
     else
       echo "4) WARN: $ADMIN_ROUTES not found, skipped"
@@ -405,16 +467,26 @@ PHP
 
     log "✅ KING STORE SECURITY installed successfully!"
     echo
-    log "🛡️  PROTECTION FEATURES:"
-    log "   👑 HANYA ADMIN ID 1 yang bisa:"
-    log "      - Akses semua admin panel"
-    log "      - Ubah semua settings"
-    log "      - Kontrol semua server"
+    log "🛡️  FULL ADMIN PANEL PROTECTION ACTIVATED:"
     log ""
-    log "   🔒 USER PROTECTION:"
-    log "      - Hanya owner bisa start/stop/restart server"
-    log "      - Hanya owner bisa akses file manager"
-    log "      - Hanya owner bisa akses backup"
-    log "      - Admin lain diblokir dari panel"
+    log "   👑 HANYA ADMIN ID 1 yang bisa akses:"
+    log "   📊 BASIC ADMINISTRATION:"
+    log "      - Overview ❌ DIBLOKIR"
+    log "      - Settings ❌ DIBLOKIR" 
+    log "      - Application API ❌ DIBLOKIR"
+    log ""
+    log "   📦 MANAGEMENT SECTION:"
+    log "      - Databases ❌ DIBLOKIR"
+    log "      - Locations ❌ DIBLOKIR"
+    log "      - Nodes ❌ DIBLOKIR"
+    log "      - Servers ❌ DIBLOKIR"
+    log "      - Users ❌ DIBLOKIR"
+    log ""
+    log "   🔧 SERVICE MANAGEMENT:"
+    log "      - Mounts ❌ DIBLOKIR"
+    log "      - Nests ❌ DIBLOKIR"
+    log "      - Eggs ❌ DIBLOKIR"
+    log ""
+    log "   💬 Error Message: 'Hanya Super Admin (ID 1) yang boleh akses Admin Panel!'"
     log ""
     log "💬 Created by KING STORE - VVIP TOOLS"
