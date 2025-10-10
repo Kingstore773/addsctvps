@@ -8,378 +8,183 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-log() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
+log() { echo -e "${GREEN}[INFO]${NC} $1"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+info() { echo -e "${BLUE}[MENU]${NC} $1"; }
 
-warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-    exit 1
-}
-
-info() {
-    echo -e "${BLUE}[MENU]${NC} $1"
+show_header() {
+    clear
+    echo "=========================================="
+    echo "      STRICT ADMIN SECURITY INSTALLER     "
+    echo "    ONLY ADMIN ID 1 HAS FULL ACCESS      "
+    echo "           @KingStoreGanteng             "
+    echo "=========================================="
+    echo
 }
 
 show_menu() {
-    clear
-    cat <<'EOF'
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣦⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠒⠒⠉⣩⣽⣿⣿⣿⣿⣿⠿⢿⣶⣶⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⣿⣿⣿⣿⣿⣿⣿⡷⠀⠈⠙⠻⢿⣿⣷⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⠿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠉⠻⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⣴⣶⣿⣿⣿⣿⣦⣄⣾⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⠏⠉⢹⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣁⡀⠀⢸⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣷⠀⢸⣿⣿⡇⠻⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⣷⣼⣿⣿⡇⠀⠈⠻⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⡃⠙⣿⣿⣄⡀⠀⠈⠙⢷⣄⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠺⣿⣿⣿⣿⣿⣿⣿⡟⠁⠀⠘⣿⣿⣿⣷⣶⣤⣈⡟⢳⢄⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⢻⣿⣯⡉⠛⠻⢿⣿⣷⣧⡀⠀⠀⠀⠀⠀⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⡿⠹⣿⣿⣿⣷⠀⠀⠀⢀⣿⣿⣷⣄⠀⠀⠈⠙⠿⣿⣄⠀⠀⠀⢠⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⠋⠀⣀⣻⣿⣿⣿⣀⣠⣶⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠈⢹⠇⠀⠀⣾⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣟⠛⠋⠉⠁⠀⠀⠀⠉⠻⢧⠀⠀⠀⠘⠃⠀⣼⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢢⡀⠀⠀⠀⠀⢿⣿⣿⠿⠟⠛⠉⠁⠈⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⢺⠀⠀⠀⠀⢀⣾⣿⣿⣿⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠊⠀⠀⠀⣰⣿⣿⣿⣿⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣾⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⣷⣤⣀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⠀⠀⠀⠀⠀⠀⣀⣤⣶⣿⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣶⣦⣤⣤⣀⣀⣀⣻⣿⣀⣀⣤⣴⣶⣿⣿⣿⣿⣿⠿⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠟⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⢿⣿⣯⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⡟⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-EOF
-
-    echo
-    echo "=========================================="
-    echo "              SIMPLE OPTION               "
-    echo "    CUSTOM SECURITY MIDDLEWARE INSTALLER  "
-    echo "                 @KingStoreGanteng                 "
-    echo "=========================================="
-    echo
-    echo "Menu yang tersedia:"
-    echo "1. Install Security Middleware"
-    echo "2. Ganti Nama Credit di Middleware"
-    echo "3. Custom Teks Error Message"
-    echo "4. Keluar"
+    show_header
+    echo "Menu Options:"
+    echo "1. Install Strict Admin Security"
+    echo "2. Change Credit Name"
+    echo "3. Custom Error Message" 
+    echo "4. Uninstall Security (Restore Original)"
+    echo "5. Exit"
     echo
 }
 
-replace_credit_name() {
-    echo
-    info "GANTI NAMA CREDIT"
-    info "================="
-    echo
-    read -p "Masukkan nama baru untuk mengganti '@KingStoreGanteng': " new_name
+backup_files() {
+    local backup_dir="/root/pterodactyl-security-backup"
+    mkdir -p "$backup_dir"
     
-    if [ -z "$new_name" ]; then
-        error "Nama tidak boleh kosong!"
+    PTERO_DIR="/var/www/pterodactyl"
+    
+    # Backup original files
+    if [ -f "$PTERO_DIR/app/Http/Kernel.php" ]; then
+        cp "$PTERO_DIR/app/Http/Kernel.php" "$backup_dir/Kernel.php.backup"
     fi
     
-    new_name=$(echo "$new_name" | sed 's/^@//')
-    
-    echo
-    info "Mengganti '@KingStoreGanteng' dengan '@$new_name'..."
-    
-    if [ ! -f "$PTERO_DIR/app/Http/Middleware/CustomSecurityCheck.php" ]; then
-        error "Middleware belum diinstall! Silakan install terlebih dahulu."
+    if [ -f "$PTERO_DIR/routes/web.php" ]; then
+        cp "$PTERO_DIR/routes/web.php" "$backup_dir/web.php.backup"
     fi
     
-    sed -i "s/@KingStoreGanteng/@$new_name/g" "$PTERO_DIR/app/Http/Middleware/CustomSecurityCheck.php"
+    if [ -f "$PTERO_DIR/routes/api.php" ]; then
+        cp "$PTERO_DIR/routes/api.php" "$backup_dir/api.php.backup"
+    fi
     
-    log "✅ Nama berhasil diganti dari '@KingStoreGanteng' menjadi '@$new_name'"
-    
-    log "🧹 Membersihkan cache..."
-    cd $PTERO_DIR
-    sudo -u www-data php artisan config:clear
-    sudo -u www-data php artisan route:clear
-    sudo -u www-data php artisan cache:clear
-    
-    echo
-    log "🎉 Nama credit berhasil diubah!"
-    log "💬 Credit sekarang: @$new_name"
+    log "📁 Backups saved to: $backup_dir"
 }
 
-custom_error_message() {
-    echo
-    info "CUSTOM TEKS ERROR MESSAGE"
-    info "========================"
-    echo
-    read -p "Masukkan teks error custom (contoh: 'Akses ditolak!'): " custom_error
+install_security() {
+    show_header
     
-    if [ -z "$custom_error" ]; then
-        error "Teks error tidak boleh kosong!"
-    fi
-    
-    echo
-    info "Mengganti teks error dengan: '$custom_error'..."
-    
-    if [ ! -f "$PTERO_DIR/app/Http/Middleware/CustomSecurityCheck.php" ]; then
-        error "Middleware belum diinstall! Silakan install terlebih dahulu."
-    fi
-    
-    sed -i "s/'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'/'error' => '$custom_error'/g" "$PTERO_DIR/app/Http/Middleware/CustomSecurityCheck.php"
-    
-    log "✅ Teks error berhasil diganti dengan: '$custom_error'"
-    
-    log "🧹 Membersihkan cache..."
-    cd $PTERO_DIR
-    sudo -u www-data php artisan config:clear
-    sudo -u www-data php artisan route:clear
-    sudo -u www-data php artisan cache:clear
-    
-    echo
-    log "🎉 Teks error berhasil diubah!"
-}
-
-apply_manual_routes() {
-    log "🔧 Applying middleware to routes manually..."
-    
-    API_CLIENT_FILE="$PTERO_DIR/routes/api-client.php"
-    if [ -f "$API_CLIENT_FILE" ]; then
-        log "📝 Processing api-client.php..."
-        
-        if grep -q "Route::group(\['prefix' => '/files'" "$API_CLIENT_FILE"; then
-            if ! grep -q "Route::group(\['prefix' => '/files', 'middleware' => \['custom.security'\]" "$API_CLIENT_FILE"; then
-                sed -i "s/Route::group(\['prefix' => '\/files'/Route::group(['prefix' => '\/files', 'middleware' => ['custom.security']/g" "$API_CLIENT_FILE"
-                log "✅ Applied middleware to /files group in api-client.php"
-            else
-                warn "⚠️ Middleware already applied to /files group in api-client.php"
-            fi
-        else
-            warn "⚠️ /files group not found in api-client.php"
-        fi
-    fi
-
-    ADMIN_FILE="$PTERO_DIR/routes/admin.php"
-    if [ -f "$ADMIN_FILE" ]; then
-        log "📝 Processing admin.php..."
-        
-        log "🔍 Searching for routes in admin.php..."
-        
-        # Method 1: Search for specific route patterns with flexible approach
-        route_patterns=(
-            "view/{user:id}.*update"
-            "view/{user:id}.*delete"
-            "view/{server:id}/details"
-            "view/{server:id}/delete"
-            "view/{node:id}/settings"
-            "view/{node:id}/configuration"
-            "view/{node:id}/settings/token"
-            "view/{node:id}/delete"
-        )
-        
-        for pattern in "${route_patterns[@]}"; do
-            log "🔍 Searching for pattern: $pattern"
-            
-            # Find lines containing the pattern
-            while IFS= read -r line; do
-                if [[ ! -z "$line" && ! "$line" =~ "middleware" && "$line" =~ "Route::" ]]; then
-                    log "📝 Found route: $(echo "$line" | tr -s ' ' | sed 's/^[[:space:]]*//')"
-                    
-                    # Check if line ends with );
-                    if [[ "$line" =~ \)\; ]]; then
-                        # Add middleware before the closing );
-                        new_line=$(echo "$line" | sed "s/);/)->middleware(['custom.security']);/")
-                        
-                        # Escape special characters for sed
-                        escaped_line=$(printf '%s\n' "$line" | sed 's/[[\.*^$/]/\\&/g')
-                        escaped_new_line=$(printf '%s\n' "$new_line" | sed 's/[[\.*^$/]/\\&/g')
-                        
-                        sed -i "s|$escaped_line|$escaped_new_line|g" "$ADMIN_FILE"
-                        log "✅ Applied middleware to route"
-                    fi
-                fi
-            done < <(grep -n "$pattern" "$ADMIN_FILE" | head -5)
-        done
-
-        # Method 2: Specific route protection for common patterns
-        log "🔧 Applying specific route protection..."
-        
-        # Protect user routes
-        if grep -q "Route::patch.*view/{user:id}.*update" "$ADMIN_FILE"; then
-            sed -i "s/Route::patch('\/view\/{user:id}', \[Admin\\UserController::class, 'update'\])/Route::patch('\/view\/{user:id}', [Admin\\UserController::class, 'update'])->middleware(['custom.security'])/g" "$ADMIN_FILE" 2>/dev/null || warn "User update route not found in exact format"
-        fi
-        
-        if grep -q "Route::delete.*view/{user:id}.*delete" "$ADMIN_FILE"; then
-            sed -i "s/Route::delete('\/view\/{user:id}', \[Admin\\UserController::class, 'delete'\])/Route::delete('\/view\/{user:id}', [Admin\\UserController::class, 'delete'])->middleware(['custom.security'])/g" "$ADMIN_FILE" 2>/dev/null || warn "User delete route not found in exact format"
-        fi
-        
-        # Protect server routes with flexible patterns
-        server_routes=(
-            "view/{server:id}/details"
-            "view/{server:id}/delete"
-        )
-        
-        for route in "${server_routes[@]}"; do
-            escaped_route=$(echo "$route" | sed 's/\//\\\//g')
-            
-            # Find and protect GET routes
-            if grep -q "Route::get.*$route" "$ADMIN_FILE"; then
-                sed -i "s/Route::get('\/$escaped_route', \[Admin\\Servers\\ServerViewController::class, '${route##*/}'\])/Route::get('\/$escaped_route', [Admin\\Servers\\ServerViewController::class, '${route##*/}'])->middleware(['custom.security'])/g" "$ADMIN_FILE" 2>/dev/null || \
-                sed -i "s/Route::get('\/$escaped_route',/Route::get('\/$escaped_route',/g" "$ADMIN_FILE" 2>/dev/null || \
-                warn "Server $route route not found in expected format"
-            fi
-        done
-        
-        # Protect POST and PATCH server routes
-        if grep -q "Route::post.*view/{server:id}/delete" "$ADMIN_FILE"; then
-            sed -i "s/Route::post('\/view\/{server:id}\/delete', \[Admin\\ServersController::class, 'delete'\])/Route::post('\/view\/{server:id}\/delete', [Admin\\ServersController::class, 'delete'])->middleware(['custom.security'])/g" "$ADMIN_FILE" 2>/dev/null || warn "Server post delete route not found"
-        fi
-        
-        if grep -q "Route::patch.*view/{server:id}/details" "$ADMIN_FILE"; then
-            sed -i "s/Route::patch('\/view\/{server:id}\/details', \[Admin\\ServersController::class, 'setDetails'\])/Route::patch('\/view\/{server:id}\/details', [Admin\\ServersController::class, 'setDetails'])->middleware(['custom.security'])/g" "$ADMIN_FILE" 2>/dev/null || warn "Server setDetails route not found"
-        fi
-
-        # Method 3: Manual inspection and protection
-        log "🔍 Manual inspection of admin.php routes..."
-        
-        # Count total routes in admin.php
-        total_routes=$(grep -c "Route::" "$ADMIN_FILE" || true)
-        log "📊 Total routes found in admin.php: $total_routes"
-        
-        # Show first few routes to understand the format
-        log "📋 Sample routes in admin.php:"
-        grep "Route::" "$ADMIN_FILE" | head -10 | while read -r route_line; do
-            log "   📝 $(echo "$route_line" | tr -s ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-        done
-        
-    else
-        error "Admin routes file not found: $ADMIN_FILE"
-    fi
-    
-    log "✅ Manual route protection completed"
-}
-
-install_middleware() {
     if [ "$EUID" -ne 0 ]; then
-        error "Please run as root: sudo bash <(curl -s https://raw.githubusercontent.com/iLyxxDev/hosting/main/security.sh)"
+        error "Please run as root: sudo bash <(curl -s https://raw.githubusercontent.com/Kingstore773/addsctvps/main/security.sh)"
     fi
 
     PTERO_DIR="/var/www/pterodactyl"
-
+    
     if [ ! -d "$PTERO_DIR" ]; then
         error "Pterodactyl directory not found: $PTERO_DIR"
     fi
 
-    log "🚀 Installing Custom Security Middleware for Pterodactyl..."
+    log "🚀 Installing Strict Admin Security Middleware..."
     log "📁 Pterodactyl directory: $PTERO_DIR"
 
-    # Check if routes directory exists
-    if [ ! -d "$PTERO_DIR/routes" ]; then
-        error "Routes directory not found: $PTERO_DIR/routes"
-    fi
+    # Create backup first
+    log "📦 Creating backup of original files..."
+    backup_files
 
-    log "📝 Creating CustomSecurityCheck middleware..."
-    cat > $PTERO_DIR/app/Http/Middleware/CustomSecurityCheck.php << 'EOF'
+    # Create middleware directory if not exists
+    mkdir -p "$PTERO_DIR/app/Http/Middleware"
+
+    # Create middleware
+    log "📝 Creating StrictAdminSecurity middleware..."
+    
+    cat > "$PTERO_DIR/app/Http/Middleware/StrictAdminSecurity.php" << 'EOF'
 <?php
 
 namespace Pterodactyl\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Pterodactyl\Models\Server;
-use Pterodactyl\Models\User;
-use Pterodactyl\Models\Node;
 
-class CustomSecurityCheck
+class StrictAdminSecurity
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!$request->user()) {
+        $user = $request->user();
+        
+        if (!$user) {
             return $next($request);
         }
 
-        $currentUser = $request->user();
         $path = $request->path();
         $method = $request->method();
 
-        if ($currentUser->root_admin && $this->isAdminAccessingRestrictedPanel($path, $method)) {
-            return new JsonResponse([
-                'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-            ], 403);
+        // Admin ID 1 has full access - no restrictions
+        if ($user->id === 1) {
+            return $next($request);
         }
 
-        if ($currentUser->root_admin && $this->isAdminAccessingSettings($path, $method)) {
-            return new JsonResponse([
-                'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-            ], 403);
+        // For non-ID-1 admin users - apply strict restrictions
+        if ($user->root_admin) {
+            // BLOCK ALL ADMIN PANEL ACCESS except Overview
+            if ($this->isAdminPanelRestrictedArea($path, $method)) {
+                return $this->denyAccess($request, 'Access denied! Only main admin can access this area. - @KingStoreGanteng');
+            }
+
+            // BLOCK ALL SETTINGS ACCESS
+            if (str_contains($path, 'admin/settings') || str_contains($path, 'application/settings')) {
+                return $this->denyAccess($request, 'Access denied! Only main admin can modify settings. - @KingStoreGanteng');
+            }
+
+            // BLOCK ALL MANAGEMENT SECTIONS
+            if ($this->isManagementSection($path)) {
+                return $this->denyAccess($request, 'Access denied! Only main admin can access management sections. - @KingStoreGanteng');
+            }
+
+            // BLOCK ALL SERVICE MANAGEMENT
+            if ($this->isServiceManagement($path)) {
+                return $this->denyAccess($request, 'Access denied! Only main admin can access service management. - @KingStoreGanteng');
+            }
+
+            // BLOCK USER MODIFICATIONS
+            if ($this->isUserModification($path, $method)) {
+                return $this->denyAccess($request, 'Access denied! Only main admin can modify users. - @KingStoreGanteng');
+            }
+
+            // BLOCK SERVER MODIFICATIONS
+            if ($this->isServerModification($path, $method)) {
+                return $this->denyAccess($request, 'Access denied! Only main admin can modify servers. - @KingStoreGanteng');
+            }
+
+            // BLOCK NODE MODIFICATIONS
+            if ($this->isNodeModification($path, $method)) {
+                return $this->denyAccess($request, 'Access denied! Only main admin can modify nodes. - @KingStoreGanteng');
+            }
+
+            // BLOCK DATABASE OPERATIONS
+            if (str_contains($path, 'admin/databases') && $method !== 'GET') {
+                return $this->denyAccess($request, 'Access denied! Only main admin can manage databases. - @KingStoreGanteng');
+            }
+
+            // BLOCK LOCATION OPERATIONS
+            if (str_contains($path, 'admin/locations') && $method !== 'GET') {
+                return $this->denyAccess($request, 'Access denied! Only main admin can manage locations. - @KingStoreGanteng');
+            }
         }
 
-        if ($currentUser->root_admin && $this->isAdminModifyingUser($path, $method)) {
-            return new JsonResponse([
-                'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-            ], 403);
-        }
-
-        if ($currentUser->root_admin && $this->isAdminModifyingServer($path, $method)) {
-            return new JsonResponse([
-                'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-            ], 403);
-        }
-
-        if ($currentUser->root_admin && $this->isAdminModifyingNode($path, $method)) {
-            return new JsonResponse([
-                'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-            ], 403);
-        }
-
-        if ($currentUser->root_admin && $this->isAdminDeletingViaAPI($path, $method)) {
-            return new JsonResponse([
-                'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-            ], 403);
-        }
-
+        // For regular users - prevent accessing other users' servers
         $server = $request->route('server');
-        if ($server instanceof Server) {
-            $isServerOwner = $currentUser->id === $server->owner_id;
-            if (!$isServerOwner) {
-                return new JsonResponse([
-                    'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-                ], 403);
-            }
-        }
-
-        if (!$currentUser->root_admin) {
-            $user = $request->route('user');
-            if ($user instanceof User && $currentUser->id !== $user->id) {
-                return new JsonResponse([
-                    'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-                ], 403);
-            }
-
-            if ($this->isAccessingRestrictedList($path, $method, $user)) {
-                return new JsonResponse([
-                    'error' => 'Mau ngapain hama wkwkwk - @KingStoreGanteng'
-                ], 403);
+        if ($server instanceof \Pterodactyl\Models\Server) {
+            if ($user->id !== $server->owner_id && !$user->root_admin) {
+                return $this->denyAccess($request, 'Access denied! You cannot access this server. - @KingStoreGanteng');
             }
         }
 
         return $next($request);
     }
 
-    private function isAdminAccessingRestrictedPanel(string $path, string $method): bool
+    private function denyAccess(Request $request, string $message)
     {
-        if ($method !== 'GET') {
-            return false;
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return new JsonResponse([
+                'error' => $message
+            ], 403);
         }
-
-        if (str_contains($path, 'admin/api')) {
-            return false;
+        
+        if ($request->hasSession()) {
+            $request->session()->flash('error', $message);
         }
+        
+        return redirect()->back();
+    }
 
+    private function isAdminPanelRestrictedArea(string $path, string $method): bool
+    {
         $restrictedPaths = [
             'admin/users',
             'admin/servers', 
@@ -401,101 +206,64 @@ class CustomSecurityCheck
         return false;
     }
 
-    private function isAdminAccessingSettings(string $path, string $method): bool
+    private function isManagementSection(string $path): bool
     {
-        if (str_contains($path, 'admin/settings')) {
-            return true;
-        }
-
-        if (str_contains($path, 'application/settings')) {
-            return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
-        }
-
-        return false;
-    }
-
-    private function isAdminModifyingUser(string $path, string $method): bool
-    {
-        if (str_contains($path, 'admin/users')) {
-            return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
-        }
-
-        if (str_contains($path, 'application/users')) {
-            return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
-        }
-
-        return false;
-    }
-
-    private function isAdminModifyingServer(string $path, string $method): bool
-    {
-        if (str_contains($path, 'admin/servers')) {
-            if ($method === 'DELETE') {
-                return true;
-            }
-            if ($method === 'POST' && str_contains($path, 'delete')) {
-                return true;
-            }
-        }
-
-        if (str_contains($path, 'application/servers')) {
-            if ($method === 'DELETE') {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isAdminModifyingNode(string $path, string $method): bool
-    {
-        if (str_contains($path, 'admin/nodes')) {
-            return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
-        }
-
-        if (str_contains($path, 'application/nodes')) {
-            return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
-        }
-
-        return false;
-    }
-
-    private function isAdminDeletingViaAPI(string $path, string $method): bool
-    {
-        if ($method === 'DELETE' && preg_match('#application/users/\d+#', $path)) {
-            return true;
-        }
-
-        if ($method === 'DELETE' && preg_match('#application/servers/\d+#', $path)) {
-            return true;
-        }
-
-        if ($method === 'DELETE' && preg_match('#application/servers/\d+/.+#', $path)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private function isAccessingRestrictedList(string $path, string $method, $user): bool
-    {
-        if ($method !== 'GET' || $user) {
-            return false;
-        }
-
-        $restrictedPaths = [
-            'admin/users', 'application/users',
-            'admin/servers', 'application/servers',
-            'admin/nodes', 'application/nodes',
-            'admin/databases', 'admin/locations',
-            'admin/nests', 'admin/mounts', 'admin/eggs',
-            'admin/settings', 'application/settings'
+        $managementPaths = [
+            'admin/databases',
+            'admin/locations', 
+            'admin/nodes',
+            'admin/servers',
+            'admin/users'
         ];
 
-        foreach ($restrictedPaths as $restrictedPath) {
-            if (str_contains($path, $restrictedPath)) {
+        foreach ($managementPaths as $managementPath) {
+            if (str_contains($path, $managementPath)) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    private function isServiceManagement(string $path): bool
+    {
+        $servicePaths = [
+            'admin/mounts',
+            'admin/nests',
+            'admin/eggs'
+        ];
+
+        foreach ($servicePaths as $servicePath) {
+            if (str_contains($path, $servicePath)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isUserModification(string $path, string $method): bool
+    {
+        if (str_contains($path, 'admin/users') || str_contains($path, 'application/users')) {
+            return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
+        }
+
+        return false;
+    }
+
+    private function isServerModification(string $path, string $method): bool
+    {
+        if (str_contains($path, 'admin/servers') || str_contains($path, 'application/servers')) {
+            return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
+        }
+
+        return false;
+    }
+
+    private function isNodeModification(string $path, string $method): bool
+    {
+        if (str_contains($path, 'admin/nodes') || str_contains($path, 'application/nodes')) {
+            return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
         }
 
         return false;
@@ -503,55 +271,84 @@ class CustomSecurityCheck
 }
 EOF
 
-    log "✅ Custom middleware created"
+    log "✅ Strict admin middleware created"
 
+    # Register middleware in Kernel
     KERNEL_FILE="$PTERO_DIR/app/Http/Kernel.php"
     log "📝 Registering middleware in Kernel..."
 
-    if grep -q "custom.security" "$KERNEL_FILE"; then
+    if [ ! -f "$KERNEL_FILE" ]; then
+        error "Kernel file not found: $KERNEL_FILE"
+    fi
+
+    if grep -q "strict.admin" "$KERNEL_FILE"; then
         warn "⚠️ Middleware already registered in Kernel"
     else
-        sed -i "/protected \$middlewareAliases = \[/a\\
-        'custom.security' => \\\\Pterodactyl\\\\Http\\\\Middleware\\\\CustomSecurityCheck::class," "$KERNEL_FILE"
-        log "✅ Middleware registered in Kernel"
+        # Add middleware to Kernel
+        if grep -q "protected \$middlewareAliases = \[" "$KERNEL_FILE"; then
+            sed -i "/protected \$middlewareAliases = \[/a\\
+        'strict.admin' => \\\\Pterodactyl\\\\Http\\\\Middleware\\\\StrictAdminSecurity::class," "$KERNEL_FILE"
+            log "✅ Middleware registered in Kernel (middlewareAliases)"
+        elif grep -q "protected \$routeMiddleware = \[" "$KERNEL_FILE"; then
+            sed -i "/protected \$routeMiddleware = \[/a\\
+        'strict.admin' => \\\\Pterodactyl\\\\Http\\\\Middleware\\\\StrictAdminSecurity::class," "$KERNEL_FILE"
+            log "✅ Middleware registered in Kernel (routeMiddleware)"
+        else
+            error "Could not find middleware aliases in Kernel.php"
+        fi
     fi
 
-    apply_manual_routes
-
-    log "🧹 Clearing cache and optimizing..."
-    cd $PTERO_DIR
-
-    sudo -u www-data php artisan config:clear
-    sudo -u www-data php artisan route:clear
-    sudo -u www-data php artisan view:clear
-    sudo -u www-data php artisan cache:clear
-    sudo -u www-data php artisan optimize
-
-    log "✅ Cache cleared successfully"
-
-    log "🔄 Restarting services..."
-
-    PHP_SERVICE=""
-    if systemctl is-active --quiet php8.2-fpm; then
-        PHP_SERVICE="php8.2-fpm"
-    elif systemctl is-active --quiet php8.1-fpm; then
-        PHP_SERVICE="php8.1-fpm"
-    elif systemctl is-active --quiet php8.0-fpm; then
-        PHP_SERVICE="php8.0-fpm"
-    elif systemctl is-active --quiet php8.3-fpm; then
-        PHP_SERVICE="php8.3-fpm"
+    # Apply to web routes
+    WEB_FILE="$PTERO_DIR/routes/web.php"
+    if [ -f "$WEB_FILE" ]; then
+        if ! grep -q "strict.admin" "$WEB_FILE"; then
+            sed -i "s/Route::middleware(\['web', 'auth', 'admin'\])->prefix('admin')->group/Route::middleware(['web', 'auth', 'admin', 'strict.admin'])->prefix('admin')->group/g" "$WEB_FILE"
+            log "✅ Applied middleware to web admin routes"
+        else
+            warn "⚠️ Middleware already applied to web routes"
+        fi
     else
-        warn "⚠️ PHP-FPM service not detected, skipping restart"
+        warn "⚠️ Web routes file not found: $WEB_FILE"
     fi
+
+    # Apply to API routes
+    API_FILE="$PTERO_DIR/routes/api.php"
+    if [ -f "$API_FILE" ]; then
+        if ! grep -q "strict.admin" "$API_FILE"; then
+            sed -i "s/Route::middleware(\['api', 'auth:api', 'admin'\])->prefix('application')->group/Route::middleware(['api', 'auth:api', 'admin', 'strict.admin'])->prefix('application')->group/g" "$API_FILE"
+            log "✅ Applied middleware to API admin routes"
+        else
+            warn "⚠️ Middleware already applied to API routes"
+        fi
+    else
+        warn "⚠️ API routes file not found: $API_FILE"
+    fi
+
+    # Clear cache
+    log "🧹 Clearing cache..."
+    cd "$PTERO_DIR"
+    sudo -u www-data php artisan config:clear > /dev/null 2>&1 || php artisan config:clear > /dev/null 2>&1
+    sudo -u www-data php artisan route:clear > /dev/null 2>&1 || php artisan route:clear > /dev/null 2>&1
+    sudo -u www-data php artisan cache:clear > /dev/null 2>&1 || php artisan cache:clear > /dev/null 2>&1
+    sudo -u www-data php artisan optimize > /dev/null 2>&1 || php artisan optimize > /dev/null 2>&1
+
+    # Restart services
+    log "🔄 Restarting services..."
+    
+    # Find PHP service
+    PHP_SERVICE=""
+    for version in 8.3 8.2 8.1 8.0 7.4; do
+        if systemctl is-active --quiet "php${version}-fpm"; then
+            PHP_SERVICE="php${version}-fpm"
+            break
+        fi
+    done
 
     if [ -n "$PHP_SERVICE" ]; then
-        systemctl restart $PHP_SERVICE
+        systemctl restart "$PHP_SERVICE"
         log "✅ $PHP_SERVICE restarted"
-    fi
-
-    if systemctl is-active --quiet pteroq-service; then
-        systemctl restart pteroq-service
-        log "✅ pterodactyl-service restarted"
+    else
+        warn "⚠️ PHP-FPM service not detected"
     fi
 
     if systemctl is-active --quiet nginx; then
@@ -559,64 +356,263 @@ EOF
         log "✅ nginx reloaded"
     fi
 
-    log "🔍 Verifying middleware application..."
+    if systemctl is-active --quiet pteroq; then
+        systemctl restart pteroq
+        log "✅ pteroq service restarted"
+    fi
+
     echo
-    log "📋 Applied middleware to:"
-    log "   ✅ Route groups: files"
-    log "   ✅ Admin routes: user update/delete"
-    log "   ✅ Server routes: details, delete, setDetails"
-    log "   ✅ Node routes: settings, configuration, token, updateSettings, delete"
-    echo
-    log "🎉 Custom Security Middleware installed successfully!"
+    log "🎉 STRICT ADMIN SECURITY installed successfully!"
     echo
     log "📊 PROTECTION SUMMARY:"
-    log "   ✅ Admin hanya bisa akses: Application API"
-    log "   ❌ Admin DIBLOKIR dari:"
-    log "      - Users, Servers, Nodes, Settings"
-    log "      - Databases, Locations, Nests, Mounts, Eggs"
-    log "      - Delete/Update operations"
-    log "   🔒 API DELETE Operations DIBLOKIR:"
-    log "      - DELETE /api/application/users/{id}"
-    log "      - DELETE /api/application/servers/{id}" 
-    log "      - DELETE /api/application/servers/{id}/force"
-    log "   🔒 Server ownership protection aktif"
-    log "   🛡️ User access restriction aktif"
+    log "   ✅ FULL ACCESS: Admin ID 1 only"
+    log "   ❌ RESTRICTED: Other admins blocked from:"
+    log "      - Management sections (Users, Servers, Nodes, etc)"
+    log "      - Service management (Nests, Mounts, Eggs)" 
+    log "      - Settings and modifications"
+    log "   🔒 Server ownership protection active"
     echo
-    log "💬 Source Code Credit by - @KingStoreGanteng'"
+    log "💬 Credit: @KingStoreGanteng"
     echo
-    warn "⚠️ IMPORTANT: Test dengan login sebagai admin dan coba akses tabs yang diblokir"
-    log "   Untuk uninstall, hapus middleware dari Kernel.php dan routes"
+    warn "⚠️ IMPORTANT: Only admin with ID 1 has full access!"
+    warn "⚠️ Other admins will see errors when accessing restricted areas"
+    echo
+    log "📦 Backup created in: /root/pterodactyl-security-backup"
+    log "🔧 To uninstall: Run this script again and choose option 4"
+}
+
+change_credit_name() {
+    show_header
+    echo "CHANGE CREDIT NAME"
+    echo "================="
+    echo
+    
+    PTERO_DIR="/var/www/pterodactyl"
+    MW_FILE="$PTERO_DIR/app/Http/Middleware/StrictAdminSecurity.php"
+    
+    if [ ! -f "$MW_FILE" ]; then
+        error "Middleware not installed! Please install security first (Option 1)."
+    fi
+    
+    read -p "Enter new name to replace '@KingStoreGanteng': " new_name
+    
+    if [ -z "$new_name" ]; then
+        error "Name cannot be empty!"
+    fi
+    
+    # Remove @ if user included it
+    new_name=$(echo "$new_name" | sed 's/^@//')
+    
+    echo
+    log "Replacing '@KingStoreGanteng' with '@$new_name'..."
+    
+    # Replace all occurrences in the middleware file
+    sed -i "s/@KingStoreGanteng/@$new_name/g" "$MW_FILE"
+    
+    log "✅ Name changed from '@KingStoreGanteng' to '@$new_name'"
+    
+    # Clear cache
+    log "🧹 Clearing cache..."
+    cd "$PTERO_DIR"
+    sudo -u www-data php artisan config:clear > /dev/null 2>&1 || php artisan config:clear > /dev/null 2>&1
+    sudo -u www-data php artisan cache:clear > /dev/null 2>&1 || php artisan cache:clear > /dev/null 2>&1
+    
+    echo
+    log "🎉 Credit name updated successfully!"
+    log "💬 New credit: @$new_name"
+}
+
+custom_error_message() {
+    show_header
+    echo "CUSTOM ERROR MESSAGE"
+    echo "==================="
+    echo
+    
+    PTERO_DIR="/var/www/pterodactyl"
+    MW_FILE="$PTERO_DIR/app/Http/Middleware/StrictAdminSecurity.php"
+    
+    if [ ! -f "$MW_FILE" ]; then
+        error "Middleware not installed! Please install security first (Option 1)."
+    fi
+    
+    read -p "Enter custom error message: " custom_error
+    
+    if [ -z "$custom_error" ]; then
+        error "Error message cannot be empty!"
+    fi
+    
+    echo
+    log "Updating all error messages to: '$custom_error'..."
+    
+    # Replace all error messages in the middleware file
+    sed -i "s/'error' => 'Access denied! Only main admin can access this area. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! Only main admin can modify settings. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! Only main admin can access management sections. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! Only main admin can access service management. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! Only main admin can modify users. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! Only main admin can modify servers. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! Only main admin can modify nodes. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! Only main admin can manage databases. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! Only main admin can manage locations. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    sed -i "s/'error' => 'Access denied! You cannot access this server. - @.*/'error' => '$custom_error'/g" "$MW_FILE"
+    
+    log "✅ All error messages updated"
+    
+    # Clear cache
+    log "🧹 Clearing cache..."
+    cd "$PTERO_DIR"
+    sudo -u www-data php artisan config:clear > /dev/null 2>&1 || php artisan config:clear > /dev/null 2>&1
+    sudo -u www-data php artisan cache:clear > /dev/null 2>&1 || php artisan cache:clear > /dev/null 2>&1
+    
+    echo
+    log "🎉 Error message customized successfully!"
+}
+
+uninstall_security() {
+    show_header
+    echo "UNINSTALL SECURITY"
+    echo "================="
+    echo
+    
+    PTERO_DIR="/var/www/pterodactyl"
+    BACKUP_DIR="/root/pterodactyl-security-backup"
+    
+    if [ ! -d "$BACKUP_DIR" ]; then
+        error "No backup found! Cannot uninstall. Backup directory not found: $BACKUP_DIR"
+    fi
+    
+    warn "⚠️ This will remove all security modifications and restore original files!"
+    echo
+    read -p "Are you sure you want to uninstall? (y/N): " confirm
+    
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        log "Uninstall cancelled."
+        return
+    fi
+    
+    log "🔄 Starting uninstall process..."
+    
+    # Remove middleware file
+    MW_FILE="$PTERO_DIR/app/Http/Middleware/StrictAdminSecurity.php"
+    if [ -f "$MW_FILE" ]; then
+        rm -f "$MW_FILE"
+        log "✅ Removed middleware file"
+    fi
+    
+    # Restore Kernel.php from backup
+    if [ -f "$BACKUP_DIR/Kernel.php.backup" ]; then
+        cp "$BACKUP_DIR/Kernel.php.backup" "$PTERO_DIR/app/Http/Kernel.php"
+        log "✅ Restored Kernel.php from backup"
+    else
+        # Remove middleware from Kernel manually
+        if [ -f "$PTERO_DIR/app/Http/Kernel.php" ]; then
+            sed -i "/'strict.admin' => .*StrictAdminSecurity::class,/d" "$PTERO_DIR/app/Http/Kernel.php"
+            log "✅ Removed middleware from Kernel.php"
+        fi
+    fi
+    
+    # Restore web.php from backup
+    if [ -f "$BACKUP_DIR/web.php.backup" ]; then
+        cp "$BACKUP_DIR/web.php.backup" "$PTERO_DIR/routes/web.php"
+        log "✅ Restored web.php from backup"
+    else
+        # Remove middleware from web routes manually
+        if [ -f "$PTERO_DIR/routes/web.php" ]; then
+            sed -i "s/Route::middleware(\['web', 'auth', 'admin', 'strict.admin'\])->prefix('admin')->group/Route::middleware(['web', 'auth', 'admin'])->prefix('admin')->group/g" "$PTERO_DIR/routes/web.php"
+            log "✅ Removed middleware from web.php"
+        fi
+    fi
+    
+    # Restore api.php from backup
+    if [ -f "$BACKUP_DIR/api.php.backup" ]; then
+        cp "$BACKUP_DIR/api.php.backup" "$PTERO_DIR/routes/api.php"
+        log "✅ Restored api.php from backup"
+    else
+        # Remove middleware from API routes manually
+        if [ -f "$PTERO_DIR/routes/api.php" ]; then
+            sed -i "s/Route::middleware(\['api', 'auth:api', 'admin', 'strict.admin'\])->prefix('application')->group/Route::middleware(['api', 'auth:api', 'admin'])->prefix('application')->group/g" "$PTERO_DIR/routes/api.php"
+            log "✅ Removed middleware from api.php"
+        fi
+    fi
+    
+    # Clear cache
+    log "🧹 Clearing cache..."
+    cd "$PTERO_DIR"
+    sudo -u www-data php artisan config:clear > /dev/null 2>&1 || php artisan config:clear > /dev/null 2>&1
+    sudo -u www-data php artisan route:clear > /dev/null 2>&1 || php artisan route:clear > /dev/null 2>&1
+    sudo -u www-data php artisan cache:clear > /dev/null 2>&1 || php artisan cache:clear > /dev/null 2>&1
+    sudo -u www-data php artisan optimize > /dev/null 2>&1 || php artisan optimize > /dev/null 2>&1
+    
+    # Restart services
+    log "🔄 Restarting services..."
+    
+    # Find PHP service
+    PHP_SERVICE=""
+    for version in 8.3 8.2 8.1 8.0 7.4; do
+        if systemctl is-active --quiet "php${version}-fpm"; then
+            PHP_SERVICE="php${version}-fpm"
+            break
+        fi
+    done
+
+    if [ -n "$PHP_SERVICE" ]; then
+        systemctl restart "$PHP_SERVICE"
+        log "✅ $PHP_SERVICE restarted"
+    fi
+
+    if systemctl is-active --quiet nginx; then
+        systemctl reload nginx
+        log "✅ nginx reloaded"
+    fi
+
+    if systemctl is-active --quiet pteroq; then
+        systemctl restart pteroq
+        log "✅ pteroq service restarted"
+    fi
+    
+    echo
+    log "🎉 Security successfully uninstalled!"
+    log "📁 Original files restored from: $BACKUP_DIR"
+    echo
+    log "🔓 All restrictions have been removed."
+    log "👥 All admins now have full access again."
+    echo
+    warn "💡 You can delete the backup folder if you want: rm -rf $BACKUP_DIR"
 }
 
 main() {
     while true; do
         show_menu
-        read -p "$(info 'Pilih opsi (1-4): ')" choice
+        echo
+        read -p "$(info 'Choose option (1-5): ')" choice
         
         case $choice in
             1)
-                echo
-                install_middleware
+                install_security
                 ;;
             2)
-                replace_credit_name
+                change_credit_name
                 ;;
             3)
                 custom_error_message
                 ;;
             4)
+                uninstall_security
+                ;;
+            5)
                 echo
-                log "Terima kasih! Keluar dari program."
+                log "Thank you! Exiting."
                 exit 0
                 ;;
             *)
-                error "Pilihan tidak valid! Silakan pilih 1, 2, 3, atau 4."
+                error "Invalid choice! Please choose 1, 2, 3, 4, or 5."
                 ;;
         esac
         
         echo
-        read -p "$(info 'Tekan Enter untuk kembali ke menu...')"
+        read -p "$(info 'Press Enter to continue...')"
     done
 }
 
+# Run main function
 main
