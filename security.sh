@@ -947,6 +947,7 @@ apply_manual_routes() {
         
         if grep -q "Route::group(\['prefix' => '/files'" "$API_CLIENT_FILE"; then
             if ! grep -q "Route::group(\['prefix' => '/files', 'middleware' => \['custom.security'\]" "$API_CLIENT_FILE"; then
+                # FIX: Use | as delimiter instead of / to avoid escaping issues
                 sed -i "s|Route::group(['prefix' => '/files'|Route::group(['prefix' => '/files', 'middleware' => ['custom.security']|g" "$API_CLIENT_FILE"
                 log "Applied to /files group in api-client.php"
                 
@@ -969,6 +970,7 @@ apply_manual_routes() {
         # Safe method - only modify settings group
         if grep -q "Route::group(\['prefix' => '/settings'" "$ADMIN_FILE"; then
             if ! grep -q "Route::group(\['prefix' => '/settings', 'middleware' => \['custom.security'\]" "$ADMIN_FILE"; then
+                # FIX: Use | as delimiter instead of /
                 sed -i "s|Route::group(['prefix' => '/settings'|Route::group(['prefix' => '/settings', 'middleware' => ['custom.security']|g" "$ADMIN_FILE"
                 log "Applied to /settings group in admin.php"
                 
