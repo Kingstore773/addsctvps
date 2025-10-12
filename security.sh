@@ -54,6 +54,161 @@ show_loading() {
     printf "] Done!\n"
 }
 
+# ===============================
+# AUTO SYNTAX REPAIR FUNCTIONS
+# ===============================
+
+# Function to check PHP syntax
+check_php_syntax() {
+    local file="$1"
+    if php -l "$file" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to detect and fix common PHP syntax errors
+auto_fix_php_syntax() {
+    local file="$1"
+    local backup_file="${file}.backup.auto.$(date +%Y%m%d_%H%M%S)"
+    
+    process "Scanning for syntax errors in: $(basename "$file")"
+    
+    # Create backup before fixing
+    cp "$file" "$backup_file"
+    
+    # Common PHP syntax errors to fix
+    local fixes_applied=0
+    
+    # 1. Fix missing closing parentheses and semicolons
+    if grep -q "Route::get.*delete';$" "$file"; then
+        sed -i "s/Route::get(.*delete';$/&)/" "$file"
+        sed -i "s/delete';$/delete');/g" "$file"
+        log "Fixed missing closing parenthesis"
+        ((fixes_applied++))
+    fi
+    
+    # 2. Fix missing semicolons at end of Route lines
+    if grep -q "^[[:space:]]*Route::.*[^;]$" "$file"; then
+        sed -i "/^[[:space:]]*Route::.*[^;]$/s/$/;/" "$file"
+        log "Fixed missing semicolons in routes"
+        ((fixes_applied++))
+    fi
+    
+    # 3. Fix unclosed strings in routes
+    if grep -q "'.*[^']$" "$file" || grep -q "\".*[^\"]$" "$file"; then
+        sed -i "s/'\(.*[^']\)$/'\\1'/g" "$file"
+        sed -i "s/\"\(.*[^\"]\)$\"/\"\\1\"/g" "$file"
+        log "Fixed unclosed strings"
+        ((fixes_applied++))
+    fi
+    
+    # 4. Fix common Laravel route syntax errors
+    if grep -q "Route::.*->middleware.*custom.security.*[^)]$" "$file"; then
+        sed -i "s/->middleware(\\['custom.security'\\][^)]*$/->middleware(['custom.security']);/g" "$file"
+        log "Fixed middleware syntax"
+        ((fixes_applied++))
+    fi
+    
+    # 5. Fix array syntax issues
+    if grep -q "\\['[^]]*$" "$file"; then
+        sed -i "s/\\['\\([^]]*\\)$/['\\1']/g" "$file"
+        log "Fixed array syntax"
+        ((fixes_applied++))
+    fi
+    
+    # 6. Fix missing commas in arrays
+    if grep -q "'.*'.*'[^,]$" "$file"; then
+        sed -i "s/'\\(.*\\)''\\(.*\\)'$/''\\1'', ''\\2''/g" "$file"
+        log "Fixed missing commas in arrays"
+        ((fixes_applied++))
+    fi
+    
+    # Verify if fixes worked
+    if check_php_syntax "$file"; then
+        log "Auto-repair successful! Fixed $fixes_applied issues in $(basename "$file")"
+        return 0
+    else
+        warn "Auto-repair failed for $(basename "$file"), restoring backup"
+        cp "$backup_file" "$file"
+        return 1
+    fi
+}
+
+# Function to safely modify PHP files with auto-repair
+safe_php_modification() {
+    local file="$1"
+    local operation_desc="$2"
+    
+    process "$operation_desc"
+    
+    # Check current syntax
+    if ! check_php_syntax "$file"; then
+        warn "File $(basename "$file") has syntax errors before modification, attempting auto-repair..."
+        if ! auto_fix_php_syntax "$file"; then
+            error "Cannot proceed - $(basename "$file") has unfixable syntax errors"
+        fi
+    fi
+    
+    return 0
+}
+
+# Function to scan and repair all route files
+scan_and_repair_routes() {
+    echo
+    route_info "Auto Syntax Repair System"
+    echo "============================"
+    echo
+    
+    PTERO_DIR="/var/www/pterodactyl"
+    local repaired_count=0
+    
+    # Files to check
+    local files_to_check=(
+        "$PTERO_DIR/routes/admin.php"
+        "$PTERO_DIR/routes/api-client.php"
+        "$PTERO_DIR/app/Http/Middleware/CustomSecurityCheck.php"
+    )
+    
+    for file in "${files_to_check[@]}"; do
+        if [ -f "$file" ]; then
+            if ! check_php_syntax "$file"; then
+                warn "Syntax error detected in: $(basename "$file")"
+                if auto_fix_php_syntax "$file"; then
+                    log "✓ Successfully repaired: $(basename "$file")"
+                    ((repaired_count++))
+                else
+                    error "✗ Failed to repair: $(basename "$file")"
+                fi
+            else
+                log "✓ $(basename "$file") - No syntax errors"
+            fi
+        else
+            warn "File not found: $(basename "$file")"
+        fi
+    done
+    
+    if [ $repaired_count -gt 0 ]; then
+        log "Auto-repair completed: $repaired_count files fixed"
+        
+        # Clear cache after repair
+        process "Clearing cache after repairs..."
+        cd "$PTERO_DIR"
+        sudo -u www-data php artisan config:clear
+        sudo -u www-data php artisan route:clear
+        sudo -u www-data php artisan cache:clear
+    else
+        log "No syntax errors found in route files"
+    fi
+    
+    echo
+}
+
+# ===============================
+# CORE FUNCTIONS
+# ===============================
+
 # License verification
 verify_license() {
     echo
@@ -117,8 +272,8 @@ EOF
 
     echo
     echo "=========================================="
-    echo "               Simple Option            "
-    echo "    Custom Security Middleware Installer"
+    echo "          SECURITY MIDDLEWARE PLUS"
+    echo "    With Auto Syntax Repair System"
     echo "                 @kingstore               "
     echo "=========================================="
     echo
@@ -131,7 +286,8 @@ EOF
     echo "6. Delete All Routes"
     echo "7. Fix Server Status Problem"
     echo "8. Show Current Status"
-    echo "9. Exit"
+    echo "9. Auto Repair Syntax Errors"
+    echo "10. Exit"
     echo
 }
 
@@ -621,12 +777,15 @@ clear_security() {
     warn "System is now in NORMAL mode without security middleware protection"
 }
 
+# Safe version of add_custom_security_middleware with auto-repair
 add_custom_security_middleware() {
     echo
     route_info "Add Custom Security Middleware"
     echo "=================================="
     echo
     info "This will add 'custom.security' middleware to specific routes in admin.php and api-client.php"
+    echo
+    warn "WARNING: This feature is experimental. Use Option 1 for full installation instead."
     echo
     read -p "Are you sure you want to add custom security middleware? (y/N): " confirm
     
@@ -655,6 +814,9 @@ add_custom_security_middleware() {
         return 1
     fi
     
+    # Run auto-repair before modification
+    scan_and_repair_routes
+    
     process "Adding custom security middleware to routes..."
     
     # Backup the files
@@ -668,11 +830,12 @@ add_custom_security_middleware() {
     # Counter for modified routes
     modified_count=0
     
-    # 1. Admin.php routes
-    process "Processing admin.php routes..."
+    # 1. Admin.php routes - SAFE METHOD
+    safe_php_modification "$ADMIN_FILE" "Processing admin.php routes"
     
-    # 1.1 Settings group in admin.php
+    # 1.1 Settings group in admin.php - SAFE
     if grep -q "Route::group(\['prefix' => 'settings'\], function () {" "$ADMIN_FILE"; then
+        # Use exact string replacement with proper escaping
         sed -i "s|Route::group(['prefix' => 'settings'], function () {|Route::group(['prefix' => 'settings', 'middleware' => ['custom.security']], function () {|g" "$ADMIN_FILE"
         log "✓ Added middleware to settings route group"
         modified_count=$((modified_count + 1))
@@ -680,122 +843,12 @@ add_custom_security_middleware() {
         warn "Settings route group not found or already modified"
     fi
     
-    # 1.2 Users section - Route::patch and Route::delete
-    process "Processing users routes..."
+    # 2. Api-client.php routes - SAFE METHOD
+    safe_php_modification "$API_CLIENT_FILE" "Processing api-client.php routes"
     
-    # Route::patch for users
-    if grep -q "Route::patch('/view/{user:id}', \[Admin\\UserController::class, 'update'\]);" "$ADMIN_FILE"; then
-        sed -i "s|Route::patch('/view/{user:id}', \[Admin\\UserController::class, 'update'\]);|Route::patch('/view/{user:id}', \[Admin\\UserController::class, 'update'\])->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to Route::patch for users"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Route::patch for users not found or already modified"
-    fi
-    
-    # Route::delete for users
-    if grep -q "Route::delete('/view/{user:id}', \[Admin\\UserController::class, 'delete'\]);" "$ADMIN_FILE"; then
-        sed -i "s|Route::delete('/view/{user:id}', \[Admin\\UserController::class, 'delete'\]);|Route::delete('/view/{user:id}', \[Admin\\UserController::class, 'delete'\])->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to Route::delete for users"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Route::delete for users not found or already modified"
-    fi
-    
-    # 1.3 Servers section - ServerInstalled group
-    process "Processing servers routes..."
-    
-    # Route::get for server details
-    if grep -q "Route::get('/view/{server:id}/details', \[Admin\\Servers\\ServerViewController::class, 'details'\])->name('admin.servers.view.details');" "$ADMIN_FILE"; then
-        sed -i "s|Route::get('/view/{server:id}/details', \[Admin\\Servers\\ServerViewController::class, 'details'\])->name('admin.servers.view.details');|Route::get('/view/{server:id}/details', \[Admin\\Servers\\ServerViewController::class, 'details'\])->name('admin.servers.view.details')->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to server details route"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Server details route not found or already modified"
-    fi
-    
-    # Route::get for server delete
-    if grep -q "Route::get('/view/{server:id}/delete', \[Admin\\Servers\\ServerViewController::class, 'delete'\])->name('admin.servers.view.delete');" "$ADMIN_FILE"; then
-        sed -i "s|Route::get('/view/{server:id}/delete', \[Admin\\Servers\\ServerViewController::class, 'delete'\])->name('admin.servers.view.delete');|Route::get('/view/{server:id}/delete', \[Admin\\Servers\\ServerViewController::class, 'delete'\])->name('admin.servers.view.delete')->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to server delete route"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Server delete route not found or already modified"
-    fi
-
-    # Route::post for server delete
-    if grep -q "Route::post('/view/{server:id}/delete', \[Admin\\ServersController::class, 'delete'\]);" "$ADMIN_FILE"; then
-        sed -i "s|Route::post('/view/{server:id}/delete', \[Admin\\ServersController::class, 'delete'\]);|Route::post('/view/{server:id}/delete', \[Admin\\ServersController::class, 'delete'\])->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to server delete route"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Server delete route not found or already modified"
-    fi
-    
-    # Route::patch for server details update
-    if grep -q "Route::patch('/view/{server:id}/details', \[Admin\\ServersController::class, 'setDetails'\]);" "$ADMIN_FILE"; then
-        sed -i "s|Route::patch('/view/{server:id}/details', \[Admin\\ServersController::class, 'setDetails'\]);|Route::patch('/view/{server:id}/details', \[Admin\\ServersController::class, 'setDetails'\])->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to server details update route"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Server details update route not found or already modified"
-    fi
-    
-    # Route::delete for database delete
-    if grep -q "Route::delete('/view/{server:id}/database/{database:id}/delete', \[Admin\\ServersController::class, 'deleteDatabase'\])->name('admin.servers.view.database.delete');" "$ADMIN_FILE"; then
-        sed -i "s|Route::delete('/view/{server:id}/database/{database:id}/delete', \[Admin\\ServersController::class, 'deleteDatabase'\])->name('admin.servers.view.database.delete');|Route::delete('/view/{server:id}/database/{database:id}/delete', \[Admin\\ServersController::class, 'deleteDatabase'\])->name('admin.servers.view.database.delete')->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to database delete route"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Database delete route not found or already modified"
-    fi
-    
-    # 1.4 Nodes section
-    process "Processing nodes routes..."
-    
-    # Route::post for node settings token
-    if grep -q "Route::post('/view/{node:id}/settings/token', Admin\\NodeAutoDeployController::class)->name('admin.nodes.view.configuration.token');" "$ADMIN_FILE"; then
-        sed -i "s|Route::post('/view/{node:id}/settings/token', Admin\\NodeAutoDeployController::class)->name('admin.nodes.view.configuration.token');|Route::post('/view/{node:id}/settings/token', Admin\\NodeAutoDeployController::class)->name('admin.nodes.view.configuration.token')->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to node settings token route"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Node settings token route not found or already modified"
-    fi
-    
-    # Route::patch for node settings
-    if grep -q "Route::patch('/view/{node:id}/settings', \[Admin\\NodesController::class, 'updateSettings'\]);" "$ADMIN_FILE"; then
-        sed -i "s|Route::patch('/view/{node:id}/settings', \[Admin\\NodesController::class, 'updateSettings'\]);|Route::patch('/view/{node:id}/settings', \[Admin\\NodesController::class, 'updateSettings'\])->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to node settings update route"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Node settings update route not found or already modified"
-    fi
-    
-    # Route::delete for node delete
-    if grep -q "Route::delete('/view/{node:id}/delete', \[Admin\\NodesController::class, 'delete'\])->name('admin.nodes.view.delete');" "$ADMIN_FILE"; then
-        sed -i "s|Route::delete('/view/{node:id}/delete', \[Admin\\NodesController::class, 'delete'\])->name('admin.nodes.view.delete');|Route::delete('/view/{node:id}/delete', \[Admin\\NodesController::class, 'delete'\])->name('admin.nodes.view.delete')->middleware(['custom.security']);|g" "$ADMIN_FILE"
-        log "✓ Added middleware to node delete route"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Node delete route not found or already modified"
-    fi
-    
-    # 2. Api-client.php routes
-    process "Processing api-client.php routes..."
-    
-    # 2.1 Server group middleware in api-client.php
-    if grep -q "Route::group(\[" "$API_CLIENT_FILE" && grep -q "'prefix' => '/servers/{server}'" "$API_CLIENT_FILE" && grep -q "ServerSubject::class" "$API_CLIENT_FILE"; then
-        # Find the line with middleware array and add custom.security
-        sed -i "/'middleware' => \[/,/\]/{
-            /ResourceBelongsToServer::class,/a\        'custom.security',
-        }" "$API_CLIENT_FILE"
-        log "✓ Added custom.security to server group middleware"
-        modified_count=$((modified_count + 1))
-    else
-        warn "Server group in api-client.php not found or already modified"
-    fi
-    
-    # 2.2 Files group in api-client.php
+    # 2.1 Files group in api-client.php - SAFE
     if grep -q "Route::group(\['prefix' => '/files'" "$API_CLIENT_FILE"; then
+        # Use exact string replacement
         sed -i "s|Route::group(['prefix' => '/files'|Route::group(['prefix' => '/files', 'middleware' => ['custom.security']|g" "$API_CLIENT_FILE"
         log "✓ Added middleware to files route group"
         modified_count=$((modified_count + 1))
@@ -803,7 +856,38 @@ add_custom_security_middleware() {
         warn "Files route group not found or already modified"
     fi
     
-    # 3. Verify modifications
+    # 3. Verify syntax after modifications
+    process "Verifying PHP syntax..."
+    
+    # Check admin.php syntax
+    if check_php_syntax "$ADMIN_FILE"; then
+        log "✓ admin.php syntax is valid"
+    else
+        warn "admin.php has syntax errors after modification, attempting auto-repair..."
+        if auto_fix_php_syntax "$ADMIN_FILE"; then
+            log "✓ admin.php auto-repaired successfully"
+        else
+            error "✗ admin.php has unfixable syntax errors! Restoring backup..."
+            cp "$admin_backup" "$ADMIN_FILE"
+            return 1
+        fi
+    fi
+    
+    # Check api-client.php syntax
+    if check_php_syntax "$API_CLIENT_FILE"; then
+        log "✓ api-client.php syntax is valid"
+    else
+        warn "api-client.php has syntax errors after modification, attempting auto-repair..."
+        if auto_fix_php_syntax "$API_CLIENT_FILE"; then
+            log "✓ api-client.php auto-repaired successfully"
+        else
+            error "✗ api-client.php has unfixable syntax errors! Restoring backup..."
+            cp "$api_backup" "$API_CLIENT_FILE"
+            return 1
+        fi
+    fi
+    
+    # 4. Verify modifications
     echo
     process "Verifying modifications..."
     
@@ -821,28 +905,56 @@ add_custom_security_middleware() {
         warn "The routes might have different patterns than expected"
     fi
     
+    # 5. Clear cache
+    process "Clearing cache..."
+    cd "$PTERO_DIR"
+    sudo -u www-data php artisan config:clear
+    sudo -u www-data php artisan route:clear
+    sudo -u www-data php artisan cache:clear
+    
     echo
     log "Custom security middleware added successfully!"
     echo
     info "Summary:"
-    log "  • Modified admin.php routes: Settings, Users, Servers, Nodes"
-    log "  • Modified api-client.php routes: Server group, Files group"
-    log "  • Total modifications: $modified_count route groups/routes"
+    log "  • Modified admin.php: Settings route group"
+    log "  • Modified api-client.php: Files route group" 
+    log "  • Total modifications: $modified_count route groups"
     echo
-    warn "Note: You need to install the middleware file and register it in Kernel.php"
+    warn "Note: This is a minimal safe installation. Use Option 1 for full middleware installation."
 }
 
+# Safe version of apply_manual_routes with auto-repair
 apply_manual_routes() {
-    process "Applying middleware to routes..."
+    process "Applying middleware to routes (safe method)..."
     
+    PTERO_DIR="/var/www/pterodactyl"
     API_CLIENT_FILE="$PTERO_DIR/routes/api-client.php"
+    ADMIN_FILE="$PTERO_DIR/routes/admin.php"
+    
+    # Run auto-repair before modification
+    if [ -f "$ADMIN_FILE" ] && ! check_php_syntax "$ADMIN_FILE"; then
+        warn "admin.php has syntax errors before modification, attempting auto-repair..."
+        auto_fix_php_syntax "$ADMIN_FILE"
+    fi
+    
+    if [ -f "$API_CLIENT_FILE" ] && ! check_php_syntax "$API_CLIENT_FILE"; then
+        warn "api-client.php has syntax errors before modification, attempting auto-repair..."
+        auto_fix_php_syntax "$API_CLIENT_FILE"
+    fi
+    
     if [ -f "$API_CLIENT_FILE" ]; then
         process "Processing api-client.php..."
         
         if grep -q "Route::group(\['prefix' => '/files'" "$API_CLIENT_FILE"; then
             if ! grep -q "Route::group(\['prefix' => '/files', 'middleware' => \['custom.security'\]" "$API_CLIENT_FILE"; then
-                sed -i "s/Route::group(\['prefix' => '\/files'/Route::group(['prefix' => '\/files', 'middleware' => ['custom.security']/g" "$API_CLIENT_FILE"
+                sed -i "s|Route::group(['prefix' => '/files'|Route::group(['prefix' => '/files', 'middleware' => ['custom.security']|g" "$API_CLIENT_FILE"
                 log "Applied to /files group in api-client.php"
+                
+                # Verify syntax after modification
+                if ! check_php_syntax "$API_CLIENT_FILE"; then
+                    warn "Syntax error detected after api-client.php modification, auto-repairing..."
+                    auto_fix_php_syntax "$API_CLIENT_FILE"
+                fi
             else
                 warn "Already applied to /files group"
             fi
@@ -851,146 +963,31 @@ apply_manual_routes() {
         fi
     fi
 
-    ADMIN_FILE="$PTERO_DIR/routes/admin.php"
     if [ -f "$ADMIN_FILE" ]; then
         process "Processing admin.php..."
 
+        # Safe method - only modify settings group
         if grep -q "Route::group(\['prefix' => '/settings'" "$ADMIN_FILE"; then
             if ! grep -q "Route::group(\['prefix' => '/settings', 'middleware' => \['custom.security'\]" "$ADMIN_FILE"; then
-                sed -i "s/Route::group(\['prefix' => '\/settings'/Route::group(['prefix' => '\/settings', 'middleware' => ['custom.security']/g" "$ADMIN_FILE"
+                sed -i "s|Route::group(['prefix' => '/settings'|Route::group(['prefix' => '/settings', 'middleware' => ['custom.security']|g" "$ADMIN_FILE"
                 log "Applied to /settings group in admin.php"
+                
+                # Verify syntax after modification
+                if ! check_php_syntax "$ADMIN_FILE"; then
+                    warn "Syntax error detected after admin.php modification, auto-repairing..."
+                    auto_fix_php_syntax "$ADMIN_FILE"
+                fi
             else
                 warn "Already applied to /settings group"
             fi
         else
             warn "/settings group not found in admin.php"
         fi
-        
-        # Backup original file
-        cp "$ADMIN_FILE" "$ADMIN_FILE.backup"
-        
-        # Method 1: Manual line-by-line processing
-        log "Processing routes line by line..."
-        
-        # Array of route patterns to protect
-        routes_to_protect=(
-            # Server routes
-            "Route::get('/view/{server:id}/delete'"
-            "Route::post('/view/{server:id}/delete'"
-            "Route::patch('/view/{server:id}/details'"
-            "Route::get('/view/{server:id}/details'"
-            
-            # User routes
-            "Route::patch('/view/{user:id}'"
-            "Route::delete('/view/{user:id}'"
-            
-            # Node routes
-            "Route::get('/view/{node:id}/settings'"
-            "Route::get('/view/{node:id}/configuration'"
-            "Route::post('/view/{node:id}/settings/token'"
-            "Route::patch('/view/{node:id}/settings'"
-            "Route::delete('/view/{node:id}/delete'"
-        )
-        
-        protected_count=0
-        
-        for route_pattern in "${routes_to_protect[@]}"; do
-            process "Searching for: $route_pattern"
-            
-            # Find the exact line with this pattern
-            while IFS= read -r line; do
-                if [[ "$line" == *"$route_pattern"* ]] && [[ "$line" != *"->middleware"* ]]; then
-                    # Remove trailing spaces and check if line ends with );
-                    clean_line=$(echo "$line" | sed 's/[[:space:]]*$//')
-                    
-                    if [[ "$clean_line" == *");" ]]; then
-                        # Replace ); with )->middleware(['custom.security']);
-                        new_line="${clean_line%);}->middleware(['custom.security']);"
-                        
-                        # Escape special characters for sed
-                        escaped_line=$(printf '%s\n' "$line" | sed 's/[[\.*^$/]/\\&/g')
-                        escaped_new_line=$(printf '%s\n' "$new_line" | sed 's/[[\.*^$/]/\\&/g')
-                        
-                        # Replace the line in the file
-                        if sed -i "s|$escaped_line|$escaped_new_line|g" "$ADMIN_FILE"; then
-                            route_name=$(echo "$line" | awk '{print $2}')
-                            log "✓ Protected: $(echo "$line" | tr -s ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-                            ((protected_count++))
-                        else
-                            warn "Failed to protect: $(echo "$line" | tr -s ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-                        fi
-                    else
-                        warn "Line doesn't end with ); : $(echo "$line" | tr -s ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-                    fi
-                fi
-            done < "$ADMIN_FILE"
-        done
-        
-        # Method 2: Verify changes were applied
-        log "Verifying middleware application..."
-        verify_count=$(grep -c "->middleware(\['custom.security'\])" "$ADMIN_FILE" || true)
-        
-        if [ $verify_count -gt 0 ]; then
-            log "Successfully applied middleware to $verify_count routes"
-        else
-            warn "No middleware applied! Using fallback method..."
-            
-            # Fallback method - manual string replacement
-            process "Using fallback string replacement..."
-            
-            # Define replacement pairs
-            replacements=(
-                # Server routes
-                "Route::get('/view/{server:id}/delete', [Admin\\Servers\\ServerViewController::class, 'delete'])->name('admin.servers.view.delete');|Route::get('/view/{server:id}/delete', [Admin\\Servers\\ServerViewController::class, 'delete'])->name('admin.servers.view.delete')->middleware(['custom.security']);"
-                "Route::post('/view/{server:id}/delete', [Admin\\ServersController::class, 'delete']);|Route::post('/view/{server:id}/delete', [Admin\\ServersController::class, 'delete'])->middleware(['custom.security']);"
-                "Route::patch('/view/{server:id}/details', [Admin\\ServersController::class, 'setDetails']);|Route::patch('/view/{server:id}/details', [Admin\\ServersController::class, 'setDetails'])->middleware(['custom.security']);"
-                "Route::get('/view/{server:id}/details', [Admin\\Servers\\ServerViewController::class, 'details'])->name('admin.servers.view.details');|Route::get('/view/{server:id}/details', [Admin\\Servers\\ServerViewController::class, 'details'])->name('admin.servers.view.details')->middleware(['custom.security']);"
-                
-                # User routes
-                "Route::patch('/view/{user:id}', [Admin\\UserController::class, 'update']);|Route::patch('/view/{user:id}', [Admin\\UserController::class, 'update'])->middleware(['custom.security']);"
-                "Route::delete('/view/{user:id}', [Admin\\UserController::class, 'delete']);|Route::delete('/view/{user:id}', [Admin\\UserController::class, 'delete'])->middleware(['custom.security']);"
-                
-                # Node routes
-                "Route::get('/view/{node:id}/settings', [Admin\\Nodes\\NodeViewController::class, 'settings'])->name('admin.nodes.view.settings');|Route::get('/view/{node:id}/settings', [Admin\\Nodes\\NodeViewController::class, 'settings'])->name('admin.nodes.view.settings')->middleware(['custom.security']);"
-                "Route::get('/view/{node:id}/configuration', [Admin\\Nodes\\NodeViewController::class, 'configuration'])->name('admin.nodes.view.configuration');|Route::get('/view/{node:id}/configuration', [Admin\\Nodes\\NodeViewController::class, 'configuration'])->name('admin.nodes.view.configuration')->middleware(['custom.security']);"
-                "Route::post('/view/{node:id}/settings/token', Admin\\NodeAutoDeployController::class)->name('admin.nodes.view.configuration.token');|Route::post('/view/{node:id}/settings/token', Admin\\NodeAutoDeployController::class)->name('admin.nodes.view.configuration.token')->middleware(['custom.security']);"
-                "Route::patch('/view/{node:id}/settings', [Admin\\NodesController::class, 'updateSettings']);|Route::patch('/view/{node:id}/settings', [Admin\\NodesController::class, 'updateSettings'])->middleware(['custom.security']);"
-                "Route::delete('/view/{node:id}/delete', [Admin\\NodesController::class, 'delete'])->name('admin.nodes.view.delete');|Route::delete('/view/{node:id}/delete', [Admin\\NodesController::class, 'delete'])->name('admin.nodes.view.delete')->middleware(['custom.security']);"
-            )
-            
-            fallback_count=0
-            for replacement in "${replacements[@]}"; do
-                original=$(echo "$replacement" | cut -d'|' -f1)
-                new=$(echo "$replacement" | cut -d'|' -f2)
-                
-                # Escape special characters
-                escaped_original=$(printf '%s\n' "$original" | sed 's/[[\.*^$/]/\\&/g')
-                escaped_new=$(printf '%s\n' "$new" | sed 's/[[\.*^$/]/\\&/g')
-                
-                if grep -q "$original" "$ADMIN_FILE"; then
-                    if sed -i "s|$escaped_original|$escaped_new|g" "$ADMIN_FILE"; then
-                        log "✓ Fallback protected: $(echo "$original" | cut -d'(' -f1)"
-                        ((fallback_count++))
-                    fi
-                fi
-            done
-            
-            if [ $fallback_count -gt 0 ]; then
-                log "Fallback method applied middleware to $fallback_count routes"
-            else
-                error "Failed to apply middleware to any routes!"
-            fi
-        fi
-        
-        # Final verification
-        final_count=$(grep -c "->middleware(\['custom.security'\])" "$ADMIN_FILE" || true)
-        log "Final verification: $final_count routes protected with middleware"
-        
     else
         error "Admin routes file not found: $ADMIN_FILE"
     fi
     
-    log "Route protection completed"
+    log "Route protection completed safely"
 }
 
 install_middleware() {
@@ -1308,6 +1305,7 @@ class CustomSecurityCheck
             return false;
         }
 
+
         $restrictedPaths = [
             'admin/users', 'application/users',
             'admin/servers', 'application/servers',
@@ -1434,9 +1432,12 @@ custom_error_message() {
 }
 
 main() {
+    # Run initial syntax check
+    scan_and_repair_routes
+    
     while true; do
         show_menu
-        read -p "$(info 'Select option (1-9): ')" choice
+        read -p "$(info 'Select option (1-10): ')" choice
         
         case $choice in
             1)
@@ -1465,12 +1466,15 @@ main() {
                 show_server_status
                 ;;
             9)
+                scan_and_repair_routes
+                ;;
+            10)
                 echo
                 log "Thank you! Exiting program."
                 exit 0
                 ;;
             *)
-                error "Invalid option! Select 1-9."
+                error "Invalid option! Select 1-10."
                 ;;
         esac
         
@@ -1479,4 +1483,5 @@ main() {
     done
 }
 
+# Run main function
 main
